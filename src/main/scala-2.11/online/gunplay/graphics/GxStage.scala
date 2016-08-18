@@ -16,6 +16,7 @@ class GxStage(playerSpawns: List[PlayerSpawn], itemSpawns: List[ItemSpawn]) {
   val position_iterations = 2
   var id_seed = 0
   val world = new World(new Vec2(0, 0))
+  world.setAllowSleep(true)
   val children = new collection.mutable.HashMap[Long, GxObject]()
 
 //  def addPlayer() {

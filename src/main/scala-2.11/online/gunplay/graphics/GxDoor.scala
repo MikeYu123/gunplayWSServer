@@ -34,15 +34,18 @@ object GxDoor {
   val doorMinAngle = (Pi * -0.5).toFloat
   val doorMaxAngle = (Pi * 0.5).toFloat
 }
-class GxDoor(override val stage: GxStage, override val uuid: String, sizes: RectSizes, orientation: DoorOrientation, override val position: Vec2)
-  extends GxObject(stage, uuid){
+
+override class GxDoor(override val stage: GxStage, override val uuid: String, sizes: RectSizes, orientation: DoorOrientation, override val position: Vec2)
+  extends GxObject(stage, uuid) {
+
   import GxDoor._
+
   var state: DoorState = DoorState.Closed
   val data: DoorData = DoorData(uuid)
 
   override val body: Body = presetBody(position)
   val filter: Filter = presetFilter()
-  val shape : Shape = presetShape(sizes)
+  val shape: Shape = presetShape(sizes)
   val fixture: Fixture = presetFixture(filter, body, shape)
   val vertex: Body = presetVertex(position, sizes, orientation)
   val joint: Joint = presetJoint(body, vertex)
@@ -76,7 +79,7 @@ class GxDoor(override val stage: GxStage, override val uuid: String, sizes: Rect
     stage.world.createJoint(jointDefinition)
   }
 
-  private def initVertexPosition(centerPointPosition: Vec2, sizes: RectSizes, orientation: DoorOrientation): Vec2 ={
+  private def initVertexPosition(centerPointPosition: Vec2, sizes: RectSizes, orientation: DoorOrientation): Vec2 = {
     orientation match {
       case DoorOrientation.Right =>
         val pointX = centerPointPosition.x - sizes.width + sizes.height
@@ -97,19 +100,19 @@ class GxDoor(override val stage: GxStage, override val uuid: String, sizes: Rect
     }
   }
 
-  private def presetFilter() : Filter = {
+  private def presetFilter(): Filter = {
     val filter = new Filter()
     filter.groupIndex = groupIndex
     filter
   }
 
-  private def presetShape(rectSizes: RectSizes) : PolygonShape = {
+  private def presetShape(rectSizes: RectSizes): PolygonShape = {
     val shape: PolygonShape = new PolygonShape
     shape.setAsBox(sizes.width, sizes.height)
     shape
   }
 
-  private def presetFixture(filter: Filter, body: Body, shape: Shape): Fixture  = {
+  private def presetFixture(filter: Filter, body: Body, shape: Shape): Fixture = {
     val fixtureDefinition: FixtureDef = new FixtureDef()
     fixtureDefinition.shape = shape
     fixtureDefinition.density = density
@@ -118,5 +121,10 @@ class GxDoor(override val stage: GxStage, override val uuid: String, sizes: Rect
   }
 
 
-  override def receive: Receive = ???
+  override def locked: Receive = {
+
+  }
+
+  override def receive: Receive = {
+  }
 }

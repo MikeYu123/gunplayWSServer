@@ -11,7 +11,7 @@ import org.jbox2d.dynamics._
 
 object GxWall {
   val bullet: Boolean = false
-  val bodyFixedRotation: Boolean = false
+  val bodyFixedRotation: Boolean = true
   val bodyType: BodyType = BodyType.STATIC
   val density: Float = 0.0f
   val groupIndex: Int = -2
