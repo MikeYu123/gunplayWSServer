@@ -9,10 +9,9 @@ import org.jbox2d.dynamics.Body
 
 //TODO: utilize akka parent-child relations when migrating to akka actors
 abstract class GxObject(val stage: GxStage, val id: Long) {
+  var angle: Float =   .0f
+  var position: Vec2 = new Vec2(0, 0)
   abstract val body: Body
-  protected var angle: Float =   .0f
-  protected var position: Vec2 = new Vec2(0, 0)
-
   def getId: Long = this.id
 
   def getBody: Body = this.body
