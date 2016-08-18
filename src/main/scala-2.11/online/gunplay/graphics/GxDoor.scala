@@ -1,10 +1,10 @@
 package online.gunplay.graphics
 
 import akka.actor.Actor.Receive
-import com.sun.java.swing.plaf.gtk.GTKConstants.Orientation
-import online.gunplay.graphics.GxDoor.DoorState
+import online.gunplay.graphics.GxDoor.DoorOrientation.DoorOrientation
+import online.gunplay.graphics.GxDoor.DoorState.DoorState
 import online.gunplay.graphics.GxObject.ObjectData
-import org.jbox2d.collision.shapes.PolygonShape
+import org.jbox2d.collision.shapes.{PolygonShape, Shape}
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.joints.{Joint, JointDef, RevoluteJoint, RevoluteJointDef}
 import org.jbox2d.dynamics._
@@ -29,58 +29,94 @@ object GxDoor {
   }
   object DoorOrientation extends Enumeration {
     type DoorOrientation = Value
-    val Top, Right, Bottom, Left = Value
+    val Up, Right, Down, Left = Value
   }
+  val doorMinAngle = (Pi * -0.5).toFloat
+  val doorMaxAngle = (Pi * 0.5).toFloat
 }
-class GxDoor(override val stage: GxStage, override val uuid: String, sizes: RectSizes, orientation: Int, override val position: Vec2)
+class GxDoor(override val stage: GxStage, override val uuid: String, sizes: RectSizes, orientation: DoorOrientation, override val position: Vec2)
   extends GxObject(stage, uuid){
-  var state = DoorState.Closed
-  val body_definition: BodyDef = new BodyDef()
-  body_definition.bullet = false
-  body_definition.position = position
-//  body_definition.fixedRotation = true
-  body_definition.`type` = BodyType.DYNAMIC
-  body_definition.userData = this
-  override val body = stage.world.createBody(body_definition)
-  val fixture_definition: FixtureDef = new FixtureDef
-  val shape: PolygonShape = new PolygonShape
-  shape.setAsBox(sizes.width, sizes.height)
-  fixture_definition.shape = shape
-  fixture_definition.density = 2.0f
-  val filter = new Filter()
-  filter.groupIndex = -2
-  fixture_definition.filter = filter
-  this.body.createFixture(fixture_definition)
-  val bodyPointPosition: Vec2 = orientation match {
-    case 0 =>
-      val pointX = position.x - sizes.width + sizes.height
-      val pointY = position.y
-      new Vec2(pointX, pointY)
-    case 1 =>
-      val pointX = position.x
-      val pointY = position.y + sizes.width - sizes.height
-      new Vec2(pointX, pointY)
-    case 2 =>
-      val pointX = position.x + sizes.width - sizes.height
-      val pointY = position.y
-      new Vec2(pointX, pointY)
-    case 3 =>
-      val pointX = position.x
-      val pointY = position.y - sizes.width + sizes.height
-      new Vec2(pointX, pointY)
+  import GxDoor._
+  var state: DoorState = DoorState.Closed
+  val data: DoorData = DoorData(uuid)
+
+  override val body: Body = presetBody(position)
+  val filter: Filter = presetFilter()
+  val shape : Shape = presetShape(sizes)
+  val fixture: Fixture = presetFixture(filter, body, shape)
+  val vertex: Body = presetVertex(position, sizes, orientation)
+  val joint: Joint = presetJoint(body, vertex)
+
+  private def presetBody(position: Vec2): Body = {
+    val bodyDefinition: BodyDef = new BodyDef()
+    bodyDefinition.bullet = bullet
+    bodyDefinition.position = position
+    bodyDefinition.fixedRotation = bodyFixedRotation
+    bodyDefinition.`type` = bodyType
+    bodyDefinition.userData = data
+    stage.world.createBody(bodyDefinition)
   }
-  val bodyPointDefinition: BodyDef = new BodyDef()
-  bodyPointDefinition.position = bodyPointPosition
-  bodyPointDefinition.userData = this
-  val bodyPoint: Body = stage.world.createBody(bodyPointDefinition)
-  val jointDefinition: RevoluteJointDef = new RevoluteJointDef()
-  jointDefinition.bodyA = body
-  jointDefinition.bodyB = bodyPoint
-//  TODO: in python there is only anchor, no anchorA or anchorB
-  jointDefinition.localAnchorB = bodyPoint.getWorldCenter
-  jointDefinition.lowerAngle = (Pi * -0.5).toFloat
-  jointDefinition.lowerAngle = (Pi * 0.5).toFloat
-  val joint: Joint = stage.world.createJoint(jointDefinition)
+
+  private def presetVertex(centerPointPosition: Vec2, sizes: RectSizes, orientation: DoorOrientation) = {
+    val vertexPosition: Vec2 = initVertexPosition(centerPointPosition, sizes, orientation)
+    val vertexDefinition: BodyDef = new BodyDef()
+    vertexDefinition.position = vertexPosition
+    vertexDefinition.userData = data
+    stage.world.createBody(vertexDefinition)
+  }
+
+  private def presetJoint(centerPoint: Body, vertex: Body): Joint = {
+    val jointDefinition: RevoluteJointDef = new RevoluteJointDef()
+    jointDefinition.bodyA = centerPoint
+    jointDefinition.bodyB = vertex
+    //  TODO: in python there is only anchor, no anchorA or anchorB
+    jointDefinition.localAnchorB = vertex.getWorldCenter
+    jointDefinition.lowerAngle = doorMinAngle
+    jointDefinition.lowerAngle = doorMaxAngle
+    stage.world.createJoint(jointDefinition)
+  }
+
+  private def initVertexPosition(centerPointPosition: Vec2, sizes: RectSizes, orientation: DoorOrientation): Vec2 ={
+    orientation match {
+      case DoorOrientation.Right =>
+        val pointX = centerPointPosition.x - sizes.width + sizes.height
+        val pointY = centerPointPosition.y
+        new Vec2(pointX, pointY)
+      case DoorOrientation.Down =>
+        val pointX = centerPointPosition.x
+        val pointY = centerPointPosition.y + sizes.width - sizes.height
+        new Vec2(pointX, pointY)
+      case DoorOrientation.Left =>
+        val pointX = centerPointPosition.x + sizes.width - sizes.height
+        val pointY = centerPointPosition.y
+        new Vec2(pointX, pointY)
+      case DoorOrientation.Up =>
+        val pointX = centerPointPosition.x
+        val pointY = centerPointPosition.y - sizes.width + sizes.height
+        new Vec2(pointX, pointY)
+    }
+  }
+
+  private def presetFilter() : Filter = {
+    val filter = new Filter()
+    filter.groupIndex = groupIndex
+    filter
+  }
+
+  private def presetShape(rectSizes: RectSizes) : PolygonShape = {
+    val shape: PolygonShape = new PolygonShape
+    shape.setAsBox(sizes.width, sizes.height)
+    shape
+  }
+
+  private def presetFixture(filter: Filter, body: Body, shape: Shape): Fixture  = {
+    val fixtureDefinition: FixtureDef = new FixtureDef()
+    fixtureDefinition.shape = shape
+    fixtureDefinition.density = density
+    fixtureDefinition.filter = filter
+    body.createFixture(fixtureDefinition)
+  }
+
 
   override def receive: Receive = ???
 }
