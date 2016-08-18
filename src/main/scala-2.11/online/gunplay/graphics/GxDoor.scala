@@ -1,6 +1,9 @@
 package online.gunplay.graphics
 
+import akka.actor.Actor.Receive
 import com.sun.java.swing.plaf.gtk.GTKConstants.Orientation
+import online.gunplay.graphics.GxDoor.DoorState
+import online.gunplay.graphics.GxObject.ObjectData
 import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.joints.{Joint, JointDef, RevoluteJoint, RevoluteJointDef}
@@ -12,8 +15,26 @@ import scala.math.Pi
   * Created by mike on 18.08.16.
   */
 //TODO orientation to case objects
-class GxDoor(override val stage: GxStage, override val id: Long, sizes: RectSizes, orientation: Int, override var position: Vec2)
-  extends GxObject(stage, id){
+
+object GxDoor {
+  val bullet: Boolean = false
+  val bodyFixedRotation: Boolean = false
+  val bodyType: BodyType = BodyType.DYNAMIC
+  val density: Float = 2.0f
+  val groupIndex: Int = -2
+  case class DoorData(uuid: String) extends ObjectData(uuid)
+  object DoorState extends Enumeration {
+    type DoorState = Value
+    val OpenedFront, Closed, OpenedBack = Value
+  }
+  object DoorOrientation extends Enumeration {
+    type DoorOrientation = Value
+    val Top, Right, Bottom, Left = Value
+  }
+}
+class GxDoor(override val stage: GxStage, override val uuid: String, sizes: RectSizes, orientation: Int, override val position: Vec2)
+  extends GxObject(stage, uuid){
+  var state = DoorState.Closed
   val body_definition: BodyDef = new BodyDef()
   body_definition.bullet = false
   body_definition.position = position
@@ -61,5 +82,5 @@ class GxDoor(override val stage: GxStage, override val id: Long, sizes: RectSize
   jointDefinition.lowerAngle = (Pi * 0.5).toFloat
   val joint: Joint = stage.world.createJoint(jointDefinition)
 
-
+  override def receive: Receive = ???
 }

@@ -9,12 +9,16 @@ import org.jbox2d.dynamics.Body
   * Created by mike on 18.08.16.
   */
 
+object GxObject{
+  abstract class ObjectData(uuid: String)
+}
+
 //TODO: utilize akka parent-child relations when migrating to akka actors
-abstract class GxObject(val stage: GxStage, val id: Long) extends Actor{
-  var angle: Float =   .0f
-  var position: Vec2 = new Vec2(0, 0)
-  abstract val body: Body
-  def getId: Long = this.id
+abstract class GxObject(val stage: GxStage, val uuid: String) extends Actor{
+  val angle: Float =  .0f
+  val position: Vec2 = new Vec2(0, 0)
+  val body: Body
+  def getuuid: String = this.uuid
 
   def getBody: Body = this.body
 

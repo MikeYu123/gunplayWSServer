@@ -18,11 +18,11 @@ class GxStage(playerSpawns: List[PlayerSpawn], itemSpawns: List[ItemSpawn]) {
   val world = new World(new Vec2(0, 0))
   val children = new collection.mutable.HashMap[Long, GxObject]()
 
-  def addPlayer() {
-    val id = id_seed
-    val pl: GxPlayer = new GxPlayer(this, id)
-    children(id) = pl
-  }
+//  def addPlayer() {
+//    val id = id_seed
+//    val pl: GxPlayer = new GxPlayer(this, id)
+//    children(id) = pl
+//  }
 
   //Initialized from Yaml
     def getRandomItemSpawn: ItemSpawn = {
