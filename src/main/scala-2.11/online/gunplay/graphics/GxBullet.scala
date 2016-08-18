@@ -1,41 +1,68 @@
 package online.gunplay.graphics
 
-import org.jbox2d.collision.shapes.{CircleShape, PolygonShape}
+import akka.actor.Actor.Receive
+import akka.actor.ActorRef
+import online.gunplay.graphics.GxObject.ObjectData
+import org.jbox2d.collision.shapes.{CircleShape, PolygonShape, Shape}
 import org.jbox2d.common.Vec2
-import org.jbox2d.dynamics.{BodyDef, BodyType, Filter, FixtureDef}
+import org.jbox2d.dynamics._
 
 import scala.math.{cos, sin}
 /**
   * Created by mike on 18.08.16.
   */
 object GxBullet {
-  val bulletOffset = 0.0055f
+  val bullet: Boolean = true
+  val bodyType: BodyType = BodyType.DYNAMIC
+  val radius: Float = 0.004f
+  val density: Float = 0.0f
+  val groupIndex: Int = -3
+  val bodyFixedRotation: Boolean = true
+  val dmg: Float = 0.0f
+  case class BulletUserData(uuid: String, damage: Float) extends ObjectData(uuid)
+
 }
 
-class GxBullet(override val stage: GxStage, override val id: Long, parent: GxObject)
-  extends GxObject(stage, id){
+class GxBullet(override val stage: GxStage, override val uuid: String, override val position: Vec2, override val angle: Float)
+  extends GxObject(stage, uuid){
   import GxBullet._
-  val parentRadius = parent.body.getFixtureList.getShape.getRadius
-  val parentAngle = parent.body.getAngle
-  val positionOffset = bulletOffset + parentRadius
-  val posX = (positionOffset * cos(parentAngle)).toFloat
-  val posY = (positionOffset * sin(parentAngle)).toFloat
-  position = new Vec2(posX, posY)
-  val body_definition: BodyDef = new BodyDef()
-  body_definition.bullet = true
-  body_definition.position = position
-  body_definition.angle = parentAngle
-//  body_definition.fixedRotation = false
-  body_definition.`type` = BodyType.DYNAMIC
-  body_definition.userData = this
-  override val body = stage.world.createBody(body_definition)
-  val fixture_definition: FixtureDef = new FixtureDef
-  val shape: CircleShape = new CircleShape
-  shape.setRadius(0.004f)
-  fixture_definition.shape = shape
-  fixture_definition.density = 0.0f
-  val filter = new Filter()
-  filter.groupIndex = -3
-  fixture_definition.filter = filter
-  this.body.createFixture(fixture_definition)
+
+  override val body: Body = presetBody(position, angle)
+  val filter: Filter = presetFilter()
+  val shape: Shape = presetShape(radius)
+  presetFixture(filter, body, shape)
+
+  private def presetBody(position: Vec2, angle: Float): Body = {
+    val bodyDefinition: BodyDef = new BodyDef()
+    bodyDefinition.bullet = bullet
+    bodyDefinition.position = position
+    bodyDefinition.angle = angle
+    bodyDefinition.fixedRotation = bodyFixedRotation
+    bodyDefinition.`type` = bodyType
+    bodyDefinition.userData = BulletUserData(uuid, dmg)
+    stage.world.createBody(bodyDefinition)
+  }
+
+  private def presetFilter() : Filter = {
+    val filter = new Filter()
+    filter.groupIndex = groupIndex
+    filter
+  }
+
+
+  private def presetShape(radius: Float) : CircleShape = {
+    val shape: CircleShape = new CircleShape
+    shape.setRadius(radius)
+    shape
+  }
+
+  private def presetFixture(filter: Filter, body: Body, shape: Shape): Fixture  = {
+    val fixtureDefinition: FixtureDef = new FixtureDef()
+    fixtureDefinition.shape = shape
+    fixtureDefinition.density = density
+    fixtureDefinition.filter = filter
+    body.createFixture(fixtureDefinition)
+  }
+
+  override def receive: Receive = ???
 }

@@ -1,30 +1,61 @@
 package online.gunplay.graphics
+import online.gunplay.graphics.GxObject.ObjectData
 import online.gunplay.graphics.{GxObject, GxStage}
 import org.jbox2d.collision.shapes.{CircleShape, PolygonShape, Shape}
 import org.jbox2d.common.Vec2
-import org.jbox2d.dynamics.{BodyDef, BodyType, Filter, FixtureDef}
+import org.jbox2d.dynamics._
 
 /**
   * Created by mike on 18.08.16.
   */
-case class RectSizes(width: Float, height: Float)
 
-class GxWall(override val stage: GxStage, override val id: Long, sizes: RectSizes)
-  extends GxObject(stage, id) {
-  val body_definition: BodyDef = new BodyDef()
-  body_definition.bullet = false
-  body_definition.position = position
-//  body_definition.fixedRotation = true
-  body_definition.`type` = BodyType.STATIC
-  body_definition.userData = this
-  override val body = stage.world.createBody(body_definition)
-  val fixture_definition: FixtureDef = new FixtureDef
-  val shape: PolygonShape = new PolygonShape
-  shape.setAsBox(sizes.width, sizes.height)
-  fixture_definition.shape = shape
-  fixture_definition.density = 0.0f
-  val filter = new Filter()
-  filter.groupIndex = -2
-  fixture_definition.filter = filter
-  this.body.createFixture(fixture_definition)
+object GxWall {
+  val bullet: Boolean = false
+  val bodyFixedRotation: Boolean = false
+  val bodyType: BodyType = BodyType.STATIC
+  val density: Float = 0.0f
+  val groupIndex: Int = -2
+  case class WallData(uuid: String) extends ObjectData(uuid)
+}
+
+class GxWall(override val stage: GxStage, override val uuid: String, sizes: RectSizes, override val position: Vec2)
+  extends GxObject(stage, uuid) {
+  import GxWall._
+
+  override val body: Body = presetBody(position)
+  val filter: Filter = presetFilter()
+  val shape : Shape = presetShape(sizes)
+  val fixture = presetFixture(filter, body, shape)
+
+  private def presetBody(position: Vec2): Body = {
+    val bodyDefinition: BodyDef = new BodyDef()
+    bodyDefinition.bullet = bullet
+    bodyDefinition.position = position
+    bodyDefinition.fixedRotation = bodyFixedRotation
+    bodyDefinition.`type` = bodyType
+    bodyDefinition.userData = WallData(uuid)
+    stage.world.createBody(bodyDefinition)
+  }
+
+  private def presetFilter() : Filter = {
+    val filter = new Filter()
+    filter.groupIndex = groupIndex
+    filter
+  }
+
+  private def presetShape(rectSizes: RectSizes) : PolygonShape = {
+    val shape: PolygonShape = new PolygonShape
+    shape.setAsBox(sizes.width, sizes.height)
+    shape
+  }
+
+  private def presetFixture(filter: Filter, body: Body, shape: Shape): Fixture  = {
+    val fixtureDefinition: FixtureDef = new FixtureDef()
+    fixtureDefinition.shape = shape
+    fixtureDefinition.density = density
+    fixtureDefinition.filter = filter
+    body.createFixture(fixtureDefinition)
+  }
+
+  override def receive: Receive = ???
 }
