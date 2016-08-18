@@ -12,7 +12,8 @@ object GxBullet {
   val bulletOffset = 0.0055f
 }
 
-class GxBullet(override val stage: GxStage, override val id: Long, parent: GxObject) extends GxObject{
+class GxBullet(override val stage: GxStage, override val id: Long, parent: GxObject)
+  extends GxObject(stage, id){
   import GxBullet._
   val parentRadius = parent.body.getFixtureList.getShape.getRadius
   val parentAngle = parent.body.getAngle

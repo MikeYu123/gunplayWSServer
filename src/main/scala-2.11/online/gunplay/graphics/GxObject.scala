@@ -1,5 +1,7 @@
 package online.gunplay.graphics
 
+import akka.actor.Actor
+import akka.actor.Actor.Receive
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.Body
 
@@ -8,7 +10,7 @@ import org.jbox2d.dynamics.Body
   */
 
 //TODO: utilize akka parent-child relations when migrating to akka actors
-abstract class GxObject(val stage: GxStage, val id: Long) {
+abstract class GxObject(val stage: GxStage, val id: Long) extends Actor{
   var angle: Float =   .0f
   var position: Vec2 = new Vec2(0, 0)
   abstract val body: Body
@@ -27,5 +29,4 @@ abstract class GxObject(val stage: GxStage, val id: Long) {
 //      body = null
     }
   }
-
 }

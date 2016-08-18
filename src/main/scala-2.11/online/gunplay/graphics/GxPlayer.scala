@@ -7,7 +7,8 @@ import org.jbox2d.dynamics.{BodyDef, BodyType, Filter, FixtureDef}
 /**
   * Created by mike on 18.08.16.
   */
-class GxPlayer(override val stage: GxStage, override val id: Long, override var position: Vec2) extends GxObject{
+class GxPlayer(override val stage: GxStage, override val id: Long, override var position: Vec2)
+  extends GxObject(stage, id){
   val body_definition: BodyDef = new BodyDef()
   body_definition.bullet = false
   body_definition.fixedRotation = true

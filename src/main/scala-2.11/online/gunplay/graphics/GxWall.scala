@@ -9,7 +9,8 @@ import org.jbox2d.dynamics.{BodyDef, BodyType, Filter, FixtureDef}
   */
 case class RectSizes(width: Float, height: Float)
 
-class GxWall(override val stage: GxStage, override val id: Long, sizes: RectSizes) extends GxObject {
+class GxWall(override val stage: GxStage, override val id: Long, sizes: RectSizes)
+  extends GxObject(stage, id) {
   val body_definition: BodyDef = new BodyDef()
   body_definition.bullet = false
   body_definition.position = position

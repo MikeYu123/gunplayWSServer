@@ -12,7 +12,8 @@ import scala.math.Pi
   * Created by mike on 18.08.16.
   */
 //TODO orientation to case objects
-class GxDoor(override val stage: GxStage, override val id: Long, sizes: RectSizes, orientation: Int, override var position: Vec2) extends GxObject{
+class GxDoor(override val stage: GxStage, override val id: Long, sizes: RectSizes, orientation: Int, override var position: Vec2)
+  extends GxObject(stage, id){
   val body_definition: BodyDef = new BodyDef()
   body_definition.bullet = false
   body_definition.position = position

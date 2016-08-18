@@ -7,6 +7,6 @@ import org.jbox2d.common.Vec2
   */
 object GxSpawnPlace {
   case class SpawnPlace(stage: GxStage, position: Vec2)
-  case class PlayerSpawn(override val stage: GxStage, override val position: Vec2) extends SpawnPlace
-  case class ItemSpawn(override val stage: GxStage, override val position: Vec2) extends SpawnPlace
+  case class PlayerSpawn(override val stage: GxStage, override val position: Vec2) extends SpawnPlace(stage, position)
+  case class ItemSpawn(override val stage: GxStage, override val position: Vec2) extends SpawnPlace(stage, position)
 }
