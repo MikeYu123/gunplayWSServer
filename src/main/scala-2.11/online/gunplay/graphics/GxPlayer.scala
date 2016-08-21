@@ -21,6 +21,7 @@ object GxPlayer {
   val radius: Float = 0.2f
   val density: Float = 1.0f
   val groupIndex: Int = 1
+  val bulletSpeed: Float = 2.0f
   case class PlayerObjectData(uuid: String, name: String) extends ObjectData(uuid)
   case object HasKilled
   case object WasKilled
@@ -38,12 +39,15 @@ class GxPlayer(override val world: World, override val uuid: String, override va
   def emitBullet: ActorRef = {
     val selfRadius: Float = fixture.getShape.getRadius
     val selfAngle: Float = body.getAngle
+    val selfCos: Double = cos(selfAngle)
+    val selfSin: Double = sin(selfAngle)
     val bulletPositionOffset: Float = bulletOffset + selfRadius
-    val bulletPosX: Float = (bulletPositionOffset * cos(selfAngle)).toFloat
-    val bulletPosY: Float = (bulletPositionOffset * sin(selfAngle)).toFloat
+    val bulletPosX: Float = (bulletPositionOffset * selfCos).toFloat
+    val bulletPosY: Float = (bulletPositionOffset * selfSin).toFloat
     val bulletPosition: Vec2 = new Vec2(bulletPosX, bulletPosY)
+    val velocity = new Vec2(selfCos, selfSin).mul(bulletSpeed)
     val uuid: String = UUID.randomUUID().toString
-    context.actorOf(Props(bulletClass, uuid, bulletPosition, selfAngle))
+    context.actorOf(Props(bulletClass, uuid, bulletPosition, selfAngle, velocity))
   }
 
   private def presetBody(position: Vec2): Body = {

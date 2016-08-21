@@ -4,6 +4,11 @@ import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.actor.Actor.Receive
+import online.gunplay.graphics.GxBullet.BulletObjectData
+import online.gunplay.graphics.GxObject.ObjectData
+import online.gunplay.graphics.GxPlayer.PlayerObjectData
+import online.gunplay.protocols.WebSocketUpMessager.ObjectInfo
+import org.jbox2d.dynamics.Body
 /**
   * Created by mike on 18.08.16.
   */
@@ -15,6 +20,7 @@ object GxStage{
   val wallClass = GxWall.getClass
   case object Update
   case class AddPlayer(name: String)
+  case object GetWorldState
 }
 
 class GxStage(playerSpawns: List[PlayerSpawnDefinition], itemSpawns: List[ItemSpawnDefinition], doors: List[DoorDefinition], walls: List[WallDefinition]) extends Actor{
@@ -22,7 +28,8 @@ class GxStage(playerSpawns: List[PlayerSpawnDefinition], itemSpawns: List[ItemSp
   import org.jbox2d.dynamics.World
   import scala.util.Random
   import GxStage._
-
+  import collection.immutable.List._
+  val pixelsPerMeter = 200.0f
 //  TODO: App config???
   val frame_per_second = 50
   val time_step = 1.0f / frame_per_second
@@ -73,6 +80,32 @@ class GxStage(playerSpawns: List[PlayerSpawnDefinition], itemSpawns: List[ItemSp
     children.values.foreach(_ ! Update)
   }
 
+  private def getBodiesInfo(pointer: Object) : List[ObjectInfo] = {
+    pointer match {
+      case null =>
+        Nil
+      case body: Body =>
+        val userData = body.getUserData()
+        userData match {
+          case data: BulletObjectData =>
+            val location = body.getPosition.mul(pixelsPerMeter)
+            val info = ObjectInfo(data.uuid, "bullet", location.x.toInt, location.y.toInt, body.getAngle)
+            info :: getBodiesInfo(body.getNext)
+          case data: PlayerObjectData =>
+            val location = body.getPosition.mul(pixelsPerMeter)
+            val info = ObjectInfo(data.uuid, "player", location.x.toInt, location.y.toInt, body.getAngle)
+            info :: getBodiesInfo(body.getNext)
+          case _ =>
+            getBodiesInfo(body.getNext)
+        }
+    }
+  }
+
+  private def getBodiesInfo() : List[ObjectInfo] = {
+    getBodiesInfo(world.getBodyList)
+  }
+
+
   override def receive : Receive = {
     case RemoveChild(uuid) =>
       removeChild(uuid)
@@ -80,5 +113,7 @@ class GxStage(playerSpawns: List[PlayerSpawnDefinition], itemSpawns: List[ItemSp
       addPlayer(name)
     case Step =>
       step()
-    }
+    case GetWorldState =>
+      sender() ! getBodiesInfo()
+  }
 }

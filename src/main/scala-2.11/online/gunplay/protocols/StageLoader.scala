@@ -17,6 +17,7 @@ object StageLoader extends DefaultJsonProtocol {
   case class SpawnDescription(x: Float, y: Float)
   case class SpawnsDescription(players: List[SpawnDescription], items: Option[List[SpawnDescription]])
   case class StageDescription(walls: List[WallDescription], doors: List[DoorDescription], spawns: SpawnsDescription)
+  val pixelsPerMeter = 200.0f
 
   implicit val wallFormat = jsonFormat4(WallDescription)
   implicit val doorFormat = jsonFormat5(DoorDescription)
@@ -46,8 +47,8 @@ object StageLoader extends DefaultJsonProtocol {
   def doorDefinitions(stageDescription: StageDescription): List[DoorDefinition] = {
     stageDescription.doors.map(dDesc => {
       DoorDefinition(
-        Location(dDesc.x / 200.0f, dDesc.y / 200.0f),
-        RectSizes(dDesc.w / 200.0f, dDesc.h / 200.0f),
+        Location(dDesc.x / pixelsPerMeter, dDesc.y / pixelsPerMeter),
+        RectSizes(dDesc.w / pixelsPerMeter, dDesc.h / pixelsPerMeter),
         DoorOrientation(dDesc.o)
       )
     })
@@ -56,8 +57,8 @@ object StageLoader extends DefaultJsonProtocol {
   def wallDefinitions(stageDescription: StageDescription): List[WallDefinition] = {
     stageDescription.walls.map(dDesc => {
       WallDefinition(
-        Location(dDesc.x / 200.0f, dDesc.y / 200.0f),
-        RectSizes(dDesc.w / 200.0f, dDesc.h / 200.0f)
+        Location(dDesc.x / pixelsPerMeter, dDesc.y / pixelsPerMeter),
+        RectSizes(dDesc.w / pixelsPerMeter, dDesc.h / pixelsPerMeter)
       )
     })
   }
@@ -65,7 +66,7 @@ object StageLoader extends DefaultJsonProtocol {
   def itemSpawnDefinitions(stageDescription: StageDescription): List[ItemSpawnDefinition] = {
     stageDescription.spawns.items match {
       case Some(dDesc: List[SpawnDescription]) =>
-        dDesc.map(description => ItemSpawnDefinition(Location(description.x / 200.0f, description.y / 200.0f)))
+        dDesc.map(description => ItemSpawnDefinition(Location(description.x / pixelsPerMeter, description.y / pixelsPerMeter)))
       case None =>
         List[ItemSpawnDefinition]()
     }
@@ -74,7 +75,7 @@ object StageLoader extends DefaultJsonProtocol {
   def playerSpawnDefinitions(stageDescription: StageDescription): List[PlayerSpawnDefinition] = {
     stageDescription.spawns.players.map(dDesc => {
       PlayerSpawnDefinition(
-        Location(dDesc.x / 200.0f, dDesc.y / 200.0f)
+        Location(dDesc.x / pixelsPerMeter, dDesc.y / pixelsPerMeter)
       )
     })
   }

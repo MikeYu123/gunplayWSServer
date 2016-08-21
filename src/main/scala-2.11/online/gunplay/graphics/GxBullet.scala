@@ -24,7 +24,7 @@ object GxBullet {
   case object Killed
 }
 
-class GxBullet(override val world: World, override val uuid: String, override val position: Vec2, initialAngle: Float)
+class GxBullet(override val world: World, override val uuid: String, override val position: Vec2, initialAngle: Float, velocity: Vec2)
   extends GxObject(world, uuid){
   import GxBullet._
   angle = initialAngle
@@ -40,6 +40,7 @@ class GxBullet(override val world: World, override val uuid: String, override va
     bodyDefinition.angle = angle
     bodyDefinition.fixedRotation = bodyFixedRotation
     bodyDefinition.`type` = bodyType
+    bodyDefinition.linearVelocity = velocity
     bodyDefinition.userData = BulletObjectData(uuid, dmg)
     world.createBody(bodyDefinition)
   }
