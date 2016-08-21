@@ -1,7 +1,6 @@
 package online.gunplay.graphics
 
 import akka.actor.Actor.Receive
-import online.gunplay.graphics.GxDoor.DoorOrientation.DoorOrientation
 import online.gunplay.graphics.GxDoor.DoorState.DoorState
 import GxObject.ObjectData
 import online.gunplay.graphics.DoorOrientation.DoorOrientation
