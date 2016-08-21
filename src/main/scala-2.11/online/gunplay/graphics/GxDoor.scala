@@ -3,13 +3,15 @@ package online.gunplay.graphics
 import akka.actor.Actor.Receive
 import online.gunplay.graphics.GxDoor.DoorOrientation.DoorOrientation
 import online.gunplay.graphics.GxDoor.DoorState.DoorState
-import online.gunplay.graphics.GxObject.ObjectData
+import GxObject.ObjectData
+import online.gunplay.graphics.DoorOrientation.DoorOrientation
+import online.gunplay.graphics.GxStage.Update
 import org.jbox2d.collision.shapes.{PolygonShape, Shape}
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.joints.{Joint, JointDef, RevoluteJoint, RevoluteJointDef}
 import org.jbox2d.dynamics._
 
-import scala.math.Pi
+import scala.math.{Pi, abs}
 
 /**
   * Created by mike on 18.08.16.
@@ -22,33 +24,33 @@ object GxDoor {
   val bodyType: BodyType = BodyType.DYNAMIC
   val density: Float = 2.0f
   val groupIndex: Int = -2
-  case class DoorData(uuid: String) extends ObjectData(uuid)
+  case class DoorObjectData(uuid: String) extends ObjectData(uuid)
   object DoorState extends Enumeration {
     type DoorState = Value
-    val OpenedFront, Closed, OpenedBack = Value
-  }
-  object DoorOrientation extends Enumeration {
-    type DoorOrientation = Value
-    val Up, Right, Down, Left = Value
+    val OpenedFront = Value(1)
+    val Closed = Value(0)
+    val OpenedBack = Value(-1)
   }
   val doorMinAngle = (Pi * -0.5).toFloat
   val doorMaxAngle = (Pi * 0.5).toFloat
+  case class EndRotating(state: DoorState)
+  case class StartRotating(manifoldPoint: Vec2)
 }
 
-override class GxDoor(override val stage: GxStage, override val uuid: String, sizes: RectSizes, orientation: DoorOrientation, override val position: Vec2)
-  extends GxObject(stage, uuid) {
+class GxDoor(override val world: World, override val uuid: String, sizes: RectSizes, orientation: DoorOrientation, override val position: Vec2)
+  extends GxObject(world, uuid) {
 
   import GxDoor._
 
   var state: DoorState = DoorState.Closed
-  val data: DoorData = DoorData(uuid)
+  val data: DoorObjectData = DoorObjectData(uuid)
 
   override val body: Body = presetBody(position)
   val filter: Filter = presetFilter()
   val shape: Shape = presetShape(sizes)
   val fixture: Fixture = presetFixture(filter, body, shape)
   val vertex: Body = presetVertex(position, sizes, orientation)
-  val joint: Joint = presetJoint(body, vertex)
+  val joint: RevoluteJoint = presetJoint(body, vertex)
 
   private def presetBody(position: Vec2): Body = {
     val bodyDefinition: BodyDef = new BodyDef()
@@ -57,7 +59,7 @@ override class GxDoor(override val stage: GxStage, override val uuid: String, si
     bodyDefinition.fixedRotation = bodyFixedRotation
     bodyDefinition.`type` = bodyType
     bodyDefinition.userData = data
-    stage.world.createBody(bodyDefinition)
+    world.createBody(bodyDefinition)
   }
 
   private def presetVertex(centerPointPosition: Vec2, sizes: RectSizes, orientation: DoorOrientation) = {
@@ -65,10 +67,10 @@ override class GxDoor(override val stage: GxStage, override val uuid: String, si
     val vertexDefinition: BodyDef = new BodyDef()
     vertexDefinition.position = vertexPosition
     vertexDefinition.userData = data
-    stage.world.createBody(vertexDefinition)
+    world.createBody(vertexDefinition)
   }
 
-  private def presetJoint(centerPoint: Body, vertex: Body): Joint = {
+  private def presetJoint(centerPoint: Body, vertex: Body): RevoluteJoint = {
     val jointDefinition: RevoluteJointDef = new RevoluteJointDef()
     jointDefinition.bodyA = centerPoint
     jointDefinition.bodyB = vertex
@@ -76,7 +78,7 @@ override class GxDoor(override val stage: GxStage, override val uuid: String, si
     jointDefinition.localAnchorB = vertex.getWorldCenter
     jointDefinition.lowerAngle = doorMinAngle
     jointDefinition.lowerAngle = doorMaxAngle
-    stage.world.createJoint(jointDefinition)
+    world.createJoint(jointDefinition).asInstanceOf[RevoluteJoint]
   }
 
   private def initVertexPosition(centerPointPosition: Vec2, sizes: RectSizes, orientation: DoorOrientation): Vec2 = {
@@ -121,10 +123,52 @@ override class GxDoor(override val stage: GxStage, override val uuid: String, si
   }
 
 
-  override def locked: Receive = {
-
+  def locked: Receive = {
+    case Update =>
+      val delta = abs(angle - body.getAngle)
+      if (delta < 0.05) {
+        joint.enableMotor(false)
+        joint.setMotorSpeed(0)
+        //        impossible in jbox2d :((
+        //        body.setAngle(angle)
+        body.setAngularVelocity(0)
+        body.setLinearVelocity(new Vec2(0, 0))
+        body.setFixedRotation(true)
+        context.become(receive)
+      }
   }
 
   override def receive: Receive = {
+    case StartRotating(manifoldPoint) =>
+      val newState = state match {
+        case DoorState.Closed => direction(manifoldPoint)
+        case _ => DoorState.Closed
+      }
+//    TODO: Configs???
+      val d: Int = newState.id
+      state = newState
+      angle = (d * Pi / 2).toFloat
+//      TODO Check if works, replace otherwise:
+//      body.getJointList.joint.asInstanceOf[RevoluteJoint].enableMotor(true)
+      joint.enableMotor(true)
+//      body.getJointList.joint.asInstanceOf[RevoluteJoint].setMaxMotorTorque(10)
+      joint.setMaxMotorTorque(10)
+      body.setFixedRotation(false)
+      //      body.getJointList.joint.asInstanceOf[RevoluteJoint].setMotorSpeed((-d * Pi).toFloat)
+      joint.setMotorSpeed((-d * Pi).toFloat)
+      context.become(locked)
+  }
+
+  private def direction(manifoldPoint: Vec2): DoorState = {
+    val jointPoint: Vec2 = body.getJointList().other.getPosition()
+    val doorPoint: Vec2 = body.getPosition()
+    val a: Vec2 = doorPoint.sub(jointPoint)
+    val b: Vec2 = manifoldPoint.sub(jointPoint)
+    val p: Float = a.x * b.y - a.y * b.x
+    p match {
+      case 0.0f => DoorState.Closed
+      case x if x < 0.0f => DoorState.OpenedFront
+      case x if x > 0.0f => DoorState.OpenedBack
+    }
   }
 }

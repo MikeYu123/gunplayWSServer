@@ -7,7 +7,6 @@ import online.gunplay.graphics.GxObject.ObjectData
 import org.jbox2d.collision.shapes.{CircleShape, Shape}
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics._
-
 import scala.math._
 
 /**
@@ -22,11 +21,13 @@ object GxPlayer {
   val radius: Float = 0.2f
   val density: Float = 1.0f
   val groupIndex: Int = 1
-  case class PlayerData(uuid: String, name: String) extends ObjectData(uuid)
+  case class PlayerObjectData(uuid: String, name: String) extends ObjectData(uuid)
+  case object HasKilled
+  case object WasKilled
 }
 
-class GxPlayer(override val stage: GxStage, override val uuid: String, override val position: Vec2, val name: String)
-  extends GxObject(stage, uuid){
+class GxPlayer(override val world: World, override val uuid: String, override val position: Vec2, val name: String)
+  extends GxObject(world, uuid){
   import GxPlayer._
 
   override val body: Body = presetBody(position)
@@ -51,8 +52,8 @@ class GxPlayer(override val stage: GxStage, override val uuid: String, override 
     bodyDefinition.position = position
     bodyDefinition.fixedRotation = bodyFixedRotation
     bodyDefinition.`type` = bodyType
-    bodyDefinition.userData = PlayerData(uuid, name)
-    stage.world.createBody(bodyDefinition)
+    bodyDefinition.userData = PlayerObjectData(uuid, name)
+    world.createBody(bodyDefinition)
   }
 
   private def presetFilter() : Filter = {
@@ -75,5 +76,7 @@ class GxPlayer(override val stage: GxStage, override val uuid: String, override 
     body.createFixture(fixtureDefinition)
   }
 
-  override def receive: Receive = ???
+  override def receive: Receive = {
+    case _ =>
+  }
 }

@@ -4,11 +4,12 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.scaladsl.Flow
 import scala.io.StdIn
+import online.gunplay.protocols.StageLoader._
 
 
 
 object WebServer extends App {
-
+  readResource("/levels/big.json")
   implicit val actorSystem = ActorSystem("akka-system")
   implicit val flowMaterializer = ActorMaterializer()
 

@@ -19,14 +19,15 @@ object GxBullet {
   val groupIndex: Int = -3
   val bodyFixedRotation: Boolean = true
   val dmg: Float = 0.0f
-  case class BulletUserData(uuid: String, damage: Float) extends ObjectData(uuid)
-
+  case class BulletObjectData(uuid: String, damage: Float) extends ObjectData(uuid)
+  case object Destroyed
+  case object Killed
 }
 
-class GxBullet(override val stage: GxStage, override val uuid: String, override val position: Vec2, override val angle: Float)
-  extends GxObject(stage, uuid){
+class GxBullet(override val world: World, override val uuid: String, override val position: Vec2, initialAngle: Float)
+  extends GxObject(world, uuid){
   import GxBullet._
-
+  angle = initialAngle
   override val body: Body = presetBody(position, angle)
   val filter: Filter = presetFilter()
   val shape: Shape = presetShape(radius)
@@ -39,8 +40,8 @@ class GxBullet(override val stage: GxStage, override val uuid: String, override 
     bodyDefinition.angle = angle
     bodyDefinition.fixedRotation = bodyFixedRotation
     bodyDefinition.`type` = bodyType
-    bodyDefinition.userData = BulletUserData(uuid, dmg)
-    stage.world.createBody(bodyDefinition)
+    bodyDefinition.userData = BulletObjectData(uuid, dmg)
+    world.createBody(bodyDefinition)
   }
 
   private def presetFilter() : Filter = {
@@ -64,5 +65,7 @@ class GxBullet(override val stage: GxStage, override val uuid: String, override 
     body.createFixture(fixtureDefinition)
   }
 
-  override def receive: Receive = ???
+  override def receive: Receive = {
+    case Destroyed =>
+  }
 }
