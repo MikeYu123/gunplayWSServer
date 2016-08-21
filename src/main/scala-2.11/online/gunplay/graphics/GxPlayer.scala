@@ -39,11 +39,11 @@ class GxPlayer(override val world: World, override val uuid: String, override va
   def emitBullet: ActorRef = {
     val selfRadius: Float = fixture.getShape.getRadius
     val selfAngle: Float = body.getAngle
-    val selfCos: Double = cos(selfAngle)
-    val selfSin: Double = sin(selfAngle)
+    val selfCos: Float = cos(selfAngle).toFloat
+    val selfSin: Float = sin(selfAngle).toFloat
     val bulletPositionOffset: Float = bulletOffset + selfRadius
-    val bulletPosX: Float = (bulletPositionOffset * selfCos).toFloat
-    val bulletPosY: Float = (bulletPositionOffset * selfSin).toFloat
+    val bulletPosX: Float = bulletPositionOffset * selfCos
+    val bulletPosY: Float = bulletPositionOffset * selfSin
     val bulletPosition: Vec2 = new Vec2(bulletPosX, bulletPosY)
     val velocity = new Vec2(selfCos, selfSin).mul(bulletSpeed)
     val uuid: String = UUID.randomUUID().toString

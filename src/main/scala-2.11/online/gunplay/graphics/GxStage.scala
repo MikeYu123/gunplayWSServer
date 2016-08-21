@@ -21,6 +21,8 @@ object GxStage{
   case object Update
   case class AddPlayer(name: String)
   case object GetWorldState
+  case class PlayerUpdate(uuid: String, w: Boolean, a: Boolean, s: Boolean, d:Boolean, click:Boolean, angle: Float)
+  case class UpdatePlayer(w: Boolean, a: Boolean, s: Boolean, d:Boolean, click:Boolean, angle: Float)
 }
 
 class GxStage(playerSpawns: List[PlayerSpawnDefinition], itemSpawns: List[ItemSpawnDefinition], doors: List[DoorDefinition], walls: List[WallDefinition]) extends Actor{
@@ -106,6 +108,7 @@ class GxStage(playerSpawns: List[PlayerSpawnDefinition], itemSpawns: List[ItemSp
   }
 
 
+
   override def receive : Receive = {
     case RemoveChild(uuid) =>
       removeChild(uuid)
@@ -115,5 +118,7 @@ class GxStage(playerSpawns: List[PlayerSpawnDefinition], itemSpawns: List[ItemSp
       step()
     case GetWorldState =>
       sender() ! getBodiesInfo()
+    case PlayerUpdate(uuid, w, a, s, d, click, angle) =>
+      children(uuid) ! UpdatePlayer(w, a, s, d, click, angle)
   }
 }
